@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/lottee-bill-app/sw.js', { scope: '/lottee-bill-app/' })})}
