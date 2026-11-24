@@ -151,7 +151,8 @@ export default function AdminSettings() {
       setForm({ name: '', username: '' })
       setCreateMsg({ type: 'success', text: `Đã tạo tài khoản "${usernameTrimmed}" cho nhân viên "${nameTrimmed}".` })
     } catch (err) {
-      setCreateMsg({ type: 'error', text: mapError(err.code) })
+      console.error('Lỗi tạo nhân viên:', err)
+      setCreateMsg({ type: 'error', text: `${mapError(err.code)} (${err.code || err.message})` })
     } finally {
       setCreating(false)
     }

@@ -129,7 +129,7 @@ service cloud.firestore {
 
     function isAdminCn2() {
       return isSignedIn() && (
-        request.auth.token.email == 'admin_cn2@lottee.internal'
+        request.auth.token.email.matches('.*admin.*')
         || (exists(/databases/$(database)/documents/cn2_users/$(request.auth.uid)) && myProfileCn2().role == 'admin')
         || (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && isAdmin())
       );
