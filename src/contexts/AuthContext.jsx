@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut as fbSignOut, signInWithEmailAndPassword } from 'firebase/auth'
-import { doc, onSnapshot } from 'firebase/firestore'
-import { auth, db, col } from '../firebase'
+import { doc, onSnapshot, setDoc } from 'firebase/firestore'
+import { auth, db, col, ADMIN_EMAIL, BRANCH_NAME } from '../firebase'
 
 const AuthContext = createContext(null)
 
@@ -25,10 +25,39 @@ export function AuthProvider({ children }) {
     if (!firebaseUser) return
     setProfileLoading(true)
     const ref = doc(db, col('users'), firebaseUser.uid)
-    const unsub = onSnapshot(ref, (snap) => {
-      setProfile(snap.exists() ? snap.data() : null)
+    const unsub = onSnapshot(ref, async (snap) => {
+      if (snap.exists()) {
+        setProfile(snap.data())
+      } else if (firebaseUser.email === ADMIN_EMAIL || firebaseUser.email === 'admin@lottee.internal') {
+        const fallbackProfile = {
+          name: BRANCH_NAME || 'GoShip Rạch Giá',
+          role: 'admin',
+          active: true,
+          email: firebaseUser.email,
+        }
+        setProfile(fallbackProfile)
+        try {
+          await setDoc(ref, fallbackProfile)
+        } catch (e) {
+          // ignore if rules don't permit client write yet
+        }
+      } else {
+        setProfile(null)
+      }
       setProfileLoading(false)
-    }, () => setProfileLoading(false))
+    }, (err) => {
+      if (firebaseUser.email === ADMIN_EMAIL || firebaseUser.email === 'admin@lottee.internal') {
+        setProfile({
+          name: BRANCH_NAME || 'GoShip Rạch Giá',
+          role: 'admin',
+          active: true,
+          email: firebaseUser.email,
+        })
+      } else {
+        setProfile(null)
+      }
+      setProfileLoading(false)
+    })
     return unsub
   }, [firebaseUser])
 
@@ -41,7 +70,7 @@ export function AuthProvider({ children }) {
     user: firebaseUser || null,
     profile,
     loading,
-    isAdmin: profile?.role === 'admin',
+    isAdmin: profile?.role === 'admin' || firebaseUser?.email === ADMIN_EMAIL || firebaseUser?.email === 'admin@lottee.internal',
     login,
     logout,
   }
